@@ -5,7 +5,7 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import axios from "axios";
 import https from "https";
 import { encode } from "js-base64";
-import { z } from "zod";
+import { boolean, z } from "zod";
 
 // read jenkins url from env
 const JENKINS_URL = process.env.JENKINS_URL;
@@ -36,7 +36,11 @@ async function doFetch(url, params) {
 }
 
 async function fetchJsonData(url) {
-  return doFetch(`${url}api/json`);
+  // if url already ends with /api/json, use the url as is
+  if (url.endsWith("/api/json")) {
+    return doFetch(url);
+  }
+  return doFetch(`${url}/api/json`);
 }
 
 const server = new McpServer({
@@ -86,13 +90,20 @@ server.tool(
 
 server.tool(
   "list-jobs",
-  { jobName: z.string(), branchName: z.string().optional() },
-  async ({ jobName, branchName }) => {
-    const baseUrl = `${JENKINS_URL}/job/Kosmos/job/${jobName}/`;
+  {
+    folderName: z.string(),
+    repoName: z.string().describe("The name of the job to list"),
+    branchName: z
+      .string()
+      .optional()
+      .describe("The name of the branch to list"),
+  },
+  async ({ folderName, repoName, branchName }) => {
+    const baseUrl = `${JENKINS_URL}/job/${folderName}/job/${repoName}/`;
     let url = `${baseUrl}`;
     try {
       if (branchName) {
-        url = `${url}/job/${branchName}/`;
+        url = `${url}job/${encodeURIComponent(branchName)}/`;
       }
 
       const response = await fetchJsonData(url);
@@ -104,6 +115,33 @@ server.tool(
       return {
         content: [
           { type: "text", text: `Error listing jobs ${url}: ${error}` },
+        ],
+      };
+    }
+  },
+  {
+    description:
+      "A tool to list repo jobs in a folder. To use this tool, you need to provide the folder name, repo name, and branch name separately.",
+  }
+);
+
+server.tool(
+  "fetch-from-jenkins",
+  {
+    jenkinsUrl: z.string().describe("The url to fetch from"),
+    json: z.boolean().describe("Whether to fetch the response as json"),
+  },
+  async ({ jenkinsUrl, json }) => {
+    const fetchAction = json ? fetchJsonData : doFetch;
+    try {
+      const response = await fetchAction(jenkinsUrl);
+      return {
+        content: [{ type: "text", text: JSON.stringify(response.data) }],
+      };
+    } catch (error) {
+      return {
+        content: [
+          { type: "text", text: `Error fetching from ${jenkinsUrl}: ${error}` },
         ],
       };
     }
