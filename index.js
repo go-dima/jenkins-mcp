@@ -5,7 +5,7 @@ import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 import axios from "axios";
 import https from "https";
 import { encode } from "js-base64";
-import { boolean, z } from "zod";
+import { z } from "zod";
 
 // read jenkins url from env
 const JENKINS_URL = process.env.JENKINS_URL;
@@ -31,6 +31,15 @@ async function doFetch(url, params) {
   return await axios.request({
     ...authConfig,
     url,
+    params,
+  });
+}
+
+async function doRequest(url, method, params) {
+  return await axios.request({
+    ...authConfig,
+    url,
+    method,
     params,
   });
 }
@@ -126,6 +135,52 @@ server.tool(
 );
 
 server.tool(
+  "build-with-parameters",
+  {
+    folderName: z.string(),
+    repoName: z.string().describe("The name of the job to build"),
+    branchName: z
+      .string()
+      .optional()
+      .default({})
+      .describe("The name of the branch to list"),
+    params: z
+      .record(z.string(), z.string())
+      .describe("The params to send request with")
+      .optional(),
+  },
+  async ({ folderName, repoName, branchName, params }) => {
+    const baseUrl = `${JENKINS_URL}/job/${folderName}/job/${repoName}/`;
+    let url = `${baseUrl}`;
+    try {
+      if (branchName) {
+        url = `${url}job/${encodeURIComponent(branchName)}/`;
+      }
+
+      const response = await doRequest(
+        `${url}buildWithParameters`,
+        "POST",
+        params
+      );
+      const data = await response.data;
+      return {
+        content: [{ type: "text", text: `Jobs: ${JSON.stringify(data)}` }],
+      };
+    } catch (error) {
+      return {
+        content: [
+          { type: "text", text: `Error listing jobs ${url}: ${error}` },
+        ],
+      };
+    }
+  },
+  {
+    description:
+      "A tool to list repo jobs in a folder. To use this tool, you need to provide the folder name, repo name, and branch name separately.",
+  }
+);
+
+server.tool(
   "fetch-from-jenkins",
   {
     jenkinsUrl: z.string().describe("The url to fetch from"),
@@ -145,6 +200,44 @@ server.tool(
         ],
       };
     }
+  },
+  {
+    description:
+      "A tool to fetch data from jenkins. To use this tool, you need to provide the full jenkins url and whether to fetch the response as json.",
+  }
+);
+
+server.tool(
+  "invoke-request",
+  {
+    jenkinsUrl: z.string().describe("The url to send request to"),
+    method: z
+      .enum(["GET", "POST", "PUT", "DELETE"])
+      .describe("The method to send request with"),
+    params: z
+      .record(z.string(), z.string())
+      .describe("The params to send request with"),
+  },
+  async ({ jenkinsUrl, method, params }) => {
+    try {
+      const response = await doRequest(jenkinsUrl, method, params);
+      return {
+        content: [{ type: "text", text: JSON.stringify(response.data) }],
+      };
+    } catch (error) {
+      return {
+        content: [
+          {
+            type: "text",
+            text: `Error invoking request ${jenkinsUrl}: ${error}`,
+          },
+        ],
+      };
+    }
+  },
+  {
+    description:
+      "A tool to invoke a request to jenkins. To use this tool, you need to provide the full jenkins url, method, and params.",
   }
 );
 
