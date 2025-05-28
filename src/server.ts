@@ -1,6 +1,6 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import { doFetch, doRequest, fetchJsonData } from "./http.ts";
+import { doFetch, doRequest, fetchJsonData } from "./http.js";
 
 // Read jenkins url from env
 const { JENKINS_URL } = process.env;
@@ -160,13 +160,18 @@ server.tool(
   "fetch-from-jenkins",
   "A tool to fetch data from jenkins. To use this tool, you need to provide the full jenkins url and whether to fetch the response as json.",
   {
-    jenkinsUrl: z.string().describe("The url to fetch from"),
+    jenkinsUrl: z.string().url().describe("The url to fetch from"),
     json: z.boolean().describe("Whether to fetch the response as json"),
   },
   async ({ jenkinsUrl, json }: { jenkinsUrl: string; json: boolean }) => {
+    let url = jenkinsUrl;
+    if (!url.startsWith(JENKINS_URL!)) {
+      url = `${JENKINS_URL}${url}`;
+    }
+
     const fetchAction = json ? fetchJsonData : doFetch;
     try {
-      const { data } = await fetchAction(jenkinsUrl);
+      const { data } = await fetchAction(url);
       return {
         content: [{ type: "text" as const, text: JSON.stringify(data) }],
       };
@@ -189,6 +194,7 @@ server.tool(
   {
     jenkinsUrl: z
       .string()
+      .url()
       .describe(
         "The url to send request to, shuold be full path, e.g. https://jenkins.com/job/folder/job/repo/job/branch/buildWithParameters"
       ),

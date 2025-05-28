@@ -162,9 +162,14 @@ server.tool(
         "POST",
         params
       );
-      const data = await response.data;
+      const { data, status } = response;
       return {
-        content: [{ type: "text", text: `Jobs: ${JSON.stringify(data)}` }],
+        content: [
+          {
+            type: "text",
+            text: `Status: ${status}, Jobs: ${JSON.stringify(data)}`,
+          },
+        ],
       };
     } catch (error) {
       return {

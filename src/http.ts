@@ -1,6 +1,6 @@
 import axios, { AxiosResponse } from "axios";
 import https from "https";
-import { authConfig } from "./config.ts";
+import { authConfig } from "./config.js";
 
 const httpsAgent = new https.Agent({
   rejectUnauthorized: false,
