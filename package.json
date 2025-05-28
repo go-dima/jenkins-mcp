@@ -11,7 +11,7 @@
     "start": "node index.js"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.8.0",
+    "@modelcontextprotocol/sdk": "^1.12.0",
     "axios": "^1.8.4",
     "js-base64": "^3.7.7"
   }

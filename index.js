@@ -210,7 +210,11 @@ server.tool(
 server.tool(
   "invoke-request",
   {
-    jenkinsUrl: z.string().describe("The url to send request to"),
+    jenkinsUrl: z
+      .string()
+      .describe(
+        "The url to send request to, shuold be full path, e.g. https://jenkins.com/job/folder/job/repo/job/branch/buildWithParameters"
+      ),
     method: z
       .enum(["GET", "POST", "PUT", "DELETE"])
       .describe("The method to send request with"),
