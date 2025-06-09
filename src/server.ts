@@ -1,5 +1,6 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
+import { categorizeError, formatError, JenkinsError } from "./errors.js";
 import { doFetch, doRequest, fetchJsonData } from "./http.js";
 
 // Read jenkins url from env
@@ -10,27 +11,50 @@ const server = new McpServer({
   version: "1.0.0",
 });
 
-server.tool("sanity-check", {}, async () => {
-  try {
-    const { status } = await doFetch(JENKINS_URL!);
-    return {
-      content: [
+function formatTextContent(text: string): any {
+  return {
+    content: [
         {
           type: "text" as const,
-          text: `I'm ${JENKINS_URL}, resposnse: ${JSON.stringify(status)}`,
-        },
-      ],
-    };
+      text,
+    },
+    ],
+  };
+}
+
+function formatErrorContent(jenkinsError: JenkinsError): any {
+  return formatTextContent(formatError(jenkinsError));
+}
+
+server.tool(
+  "sanity-check",
+  "Test connectivity and authentication with your Jenkins server. This verifies that the server is reachable and your credentials are working correctly.",
+  {},
+  async () => {
+    try {
+      const { status } = await doFetch(JENKINS_URL!);
+      return formatTextContent(
+        `✅ **Jenkins Server Status: Healthy**\n\n` +
+          `🔗 **Server URL:** ${JENKINS_URL}\n` +
+          `📡 **Response Code:** ${status}\n` +
+          `🔑 **Authentication:** Working\n\n` +
+          `Your Jenkins server is accessible and ready for use!`
+      );
   } catch (error) {
-    return {
-      content: [{ type: "text" as const, text: `Error in sanity: ${error}` }],
-    };
+      const jenkinsError = categorizeError(error);
+      return formatErrorContent(jenkinsError);
   }
-});
+  }
+);
 
 server.tool(
   "search-jobs",
-  { searchTerm: z.string() },
+  "Search for Jenkins jobs by keyword or pattern. This helps you discover available jobs when you don't know the exact job name. Returns matching jobs with their paths and types.",
+  {
+    searchTerm: z
+      .string()
+      .describe("Keyword or pattern to search for in job names"),
+  },
   async ({ searchTerm }: { searchTerm: string }) => {
     try {
       const { data } = await doFetch(`${JENKINS_URL}/search/suggest`, {
@@ -42,25 +66,26 @@ server.tool(
         ],
       };
     } catch (error) {
-      return {
-        content: [
-          { type: "text" as const, text: `Error searching jobs: ${error}` },
-        ],
-      };
+      const jenkinsError = categorizeError(error);
+      return formatErrorContent(jenkinsError);
     }
   }
 );
 
 server.tool(
   "list-jobs",
-  "A tool to list repo jobs in a folder. To use this tool, you need to provide the folder name, repo name, and branch name separately.",
+  "List all jobs within a specific Jenkins folder and repository structure. Use this to browse the hierarchical organization of your Jenkins jobs. Optionally specify a branch to see branch-specific jobs.",
   {
-    folderName: z.string(),
-    repoName: z.string().describe("The name of the job to list"),
+    folderName: z
+      .string()
+      .describe("The Jenkins folder name (top-level organization)"),
+    repoName: z
+      .string()
+      .describe("The repository or project name within the folder"),
     branchName: z
       .string()
       .optional()
-      .describe("The name of the branch to list"),
+      .describe("Optional: specific branch name to list jobs for"),
   },
   async ({
     folderName,
@@ -85,31 +110,36 @@ server.tool(
         ],
       };
     } catch (error) {
-      return {
-        content: [
-          {
-            type: "text" as const,
-            text: `Error listing jobs ${url}: ${error}`,
-          },
-        ],
-      };
+      const jenkinsError = categorizeError(error);
+      jenkinsError.suggestions.unshift(
+        `Verify the path ${folderName}/${repoName}${
+          branchName ? "/" + branchName : ""
+        } exists in Jenkins`
+      );
+      return formatErrorContent(jenkinsError);
     }
   }
 );
 
 server.tool(
   "build-with-parameters",
-  "A tool to build repo jobs in a folder. To use this tool, you need to provide the folder name, repo name, and branch name separately.",
+  "Trigger a Jenkins build with custom parameters. This starts a new build job with the specified configuration. Supports environment variables, version numbers, deployment targets, and other custom parameters defined in the job.",
   {
-    folderName: z.string(),
-    repoName: z.string().describe("The name of the job to build"),
+    folderName: z
+      .string()
+      .describe("The Jenkins folder name containing the job"),
+    repoName: z.string().describe("The repository or project name to build"),
     branchName: z
       .string()
       .optional()
-      .describe("The name of the branch to list"),
+      .describe(
+        "Optional: specific branch to build (if job supports multiple branches)"
+      ),
     params: z
       .record(z.string(), z.string())
-      .describe("The params to send request with")
+      .describe(
+        "Build parameters as key-value pairs (e.g., {'ENVIRONMENT': 'staging', 'VERSION': '1.2.3'})"
+      )
       .optional(),
   },
   async ({
@@ -144,24 +174,37 @@ server.tool(
         ],
       };
     } catch (error) {
-      return {
-        content: [
-          {
-            type: "text" as const,
-            text: `Error listing jobs ${url}: ${error}`,
-          },
-        ],
-      };
+      const jenkinsError = categorizeError(error);
+      const jobPath = branchName
+        ? `${folderName}/${repoName}/${branchName}`
+        : `${folderName}/${repoName}`;
+      jenkinsError.suggestions.unshift(
+        `Verify the job ${jobPath} exists and supports parameterized builds`
+      );
+      if (params && Object.keys(params).length > 0) {
+        jenkinsError.suggestions.push(
+          `Check if the provided parameters match the job's parameter definitions`
+        );
+      }
+      return formatErrorContent(jenkinsError);
     }
   }
 );
 
 server.tool(
   "fetch-from-jenkins",
-  "A tool to fetch data from jenkins. To use this tool, you need to provide the full jenkins url and whether to fetch the response as json.",
+  "Retrieve raw data from any Jenkins API endpoint. This is a powerful generic tool for accessing Jenkins data that isn't covered by other specific tools. Useful for custom integrations and advanced Jenkins API usage.",
   {
-    jenkinsUrl: z.string().url().describe("The url to fetch from"),
-    json: z.boolean().describe("Whether to fetch the response as json"),
+    jenkinsUrl: z
+      .string()
+      .describe(
+        "The complete Jenkins API URL to fetch from (can be relative to Jenkins base URL)"
+      ),
+    json: z
+      .boolean()
+      .describe(
+        "Whether to parse the response as JSON (true) or return raw text (false)"
+      ),
   },
   async ({ jenkinsUrl, json }: { jenkinsUrl: string; json: boolean }) => {
     let url = jenkinsUrl;
@@ -176,34 +219,38 @@ server.tool(
         content: [{ type: "text" as const, text: JSON.stringify(data) }],
       };
     } catch (error) {
-      return {
-        content: [
-          {
-            type: "text" as const,
-            text: `Error fetching from ${jenkinsUrl}: ${error}`,
-          },
-        ],
-      };
+      const jenkinsError = categorizeError(error);
+      jenkinsError.suggestions.unshift(
+        `Verify the URL ${jenkinsUrl} is correct and accessible`
+      );
+      jenkinsError.suggestions.push(
+        `Check if the endpoint requires specific permissions`
+      );
+      return formatErrorContent(jenkinsError);
     }
   }
 );
 
 server.tool(
   "invoke-request",
-  "A tool to invoke a request to jenkins. To use this tool, you need to provide the full jenkins url, method, and params.",
+  "Execute any HTTP request to Jenkins with full control over method and parameters. This is the most flexible tool for advanced Jenkins operations like creating jobs, updating configurations, or performing administrative tasks.",
   {
     jenkinsUrl: z
       .string()
       .url()
       .describe(
-        "The url to send request to, shuold be full path, e.g. https://jenkins.com/job/folder/job/repo/job/branch/buildWithParameters"
+        "The complete Jenkins URL for the operation (e.g., 'https://jenkins.example.com/job/folder/job/repo/buildWithParameters')"
       ),
     method: z
       .enum(["GET", "POST", "PUT", "DELETE"])
-      .describe("The method to send request with"),
+      .describe(
+        "HTTP method: GET (retrieve), POST (create/trigger), PUT (update), DELETE (remove)"
+      ),
     params: z
       .record(z.string(), z.string())
-      .describe("The params to send request with"),
+      .describe(
+        "Request parameters as key-value pairs - form data for POST/PUT, query params for GET"
+      ),
   },
   async ({
     jenkinsUrl,
@@ -220,14 +267,19 @@ server.tool(
         content: [{ type: "text" as const, text: JSON.stringify(data) }],
       };
     } catch (error) {
-      return {
-        content: [
-          {
-            type: "text" as const,
-            text: `Error invoking request ${jenkinsUrl}: ${error}`,
-          },
-        ],
-      };
+      const jenkinsError = categorizeError(error);
+      jenkinsError.suggestions.unshift(
+        `Verify the URL ${jenkinsUrl} supports ${method} requests`
+      );
+      jenkinsError.suggestions.push(
+        `Check if the operation requires specific Jenkins permissions`
+      );
+      if (method === "POST" || method === "PUT") {
+        jenkinsError.suggestions.push(
+          `Ensure required parameters are provided for ${method} operations`
+        );
+      }
+      return formatErrorContent(jenkinsError);
     }
   }
 );
