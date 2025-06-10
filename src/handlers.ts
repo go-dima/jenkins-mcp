@@ -130,7 +130,7 @@ export const handleListBuilds = async ({
           : "⚪"
         : "📋";
 
-      output += `${index + 1}. ${statusIcon} **${build.name}**\n`;
+      output += `${index + 1}. ${statusIcon} **${build.number}**\n`;
       output += `   🔗 ${build.url}\n`;
       if (build.description) output += `   📝 ${build.description}\n`;
       if (build.lastBuild) {
