@@ -1,0 +1,20 @@
+{
+  "sanity-check": {
+    "description": ""
+  },
+  "search-jobs": {
+    "description": ""
+  },
+  "list-builds": {
+    "description": ""
+  },
+  "build-with-parameters": {
+    "description": ""
+  },
+  "fetch-from-jenkins": {
+    "description": ""
+  },
+  "invoke-request": {
+    "description": ""
+  }
+}

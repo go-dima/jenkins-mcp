@@ -12,7 +12,7 @@ export interface JenkinsError {
   originalError?: any;
 }
 
-export function categorizeError(error: any): JenkinsError {
+export const categorizeError = (error: any): JenkinsError => {
   const errorStr = error.toString().toLowerCase();
 
   if (
@@ -99,9 +99,9 @@ export function categorizeError(error: any): JenkinsError {
     ],
     originalError: error,
   };
-}
+};
 
-export function formatError(jenkinsError: JenkinsError): string {
+export const formatError = (jenkinsError: JenkinsError): string => {
   const errorType = jenkinsError.type.replace("_", " ").toLowerCase();
   let output = `❌ **${jenkinsError.message}** (${errorType} error)\n\n`;
 
@@ -117,4 +117,4 @@ export function formatError(jenkinsError: JenkinsError): string {
   }
 
   return output;
-}
+};

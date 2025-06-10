@@ -18,10 +18,14 @@ The Jenkins MCP Server acts as a bridge between Cursor IDE and Jenkins, allowing
 
 1. **sanity-check** - Verify connection to Jenkins server
 2. **search-jobs** - Search for jobs using keywords
-3. **list-jobs** - List jobs in a specific folder/repository/branch
+3. **list-builds** - List builds in a specific folder/repository/branch
 4. **build-with-parameters** - Trigger parameterized builds
 5. **fetch-from-jenkins** - Fetch data from any Jenkins endpoint
 6. **invoke-request** - Execute custom HTTP requests to Jenkins API
+
+### Tool Description Extension
+
+You can extend the tools by adding tailored descriptions to the `assets/extraDescriptions.json` file. You'll need to re-build the project to see the changes.
 
 ### Security Features
 
@@ -33,10 +37,16 @@ The Jenkins MCP Server acts as a bridge between Cursor IDE and Jenkins, allowing
 
 ```
 jenkins-mcp-server/
-├── index.js                # Main JavaScript implementation
-├── package.json            # Node.js dependencies and scripts
-├── .gitignore              # Git ignore rules
-└── README.md               # This file
+├── src/                    # source code
+│   ├── assets/
+│   │   └── extraDescriptions.json  # Custom tool descriptions
+│   ├── consts/
+│   │   └── toolIds.ts      # Tool identifier constants
+│   ├── utils/              # Utility functions
+│   ├── handlers.ts         # MCP request handlers
+│   ├── index.ts            # Main entry point
+│   ├── server.ts           # MCP server setup
+│   └── tools.ts            # Tool definitions
 ```
 
 ## Prerequisites
@@ -59,6 +69,24 @@ jenkins-mcp-server/
    ```bash
    npm install
    ```
+
+3. Tailor usage (optional)
+
+   Add a new tool description to the `assets/extraDescriptions.json` file:
+
+   ```ts
+   {
+     "search-jobs": {
+       "description": "Use this rule when no specific job is mentioned"
+     }
+   }
+   ```
+
+4. Build the project:
+
+```bash
+npm run build
+```
 
 ## Configuration
 
@@ -141,7 +169,7 @@ Once the MCP server is running and connected to Cursor, you can use natural lang
 
 - "Check if Jenkins is accessible" → Uses `sanity-check`
 - "Search for jobs containing 'frontend'" → Uses `search-jobs`
-- "List jobs in the mobile-apps folder for the ios-app repository" → Uses `list-jobs`
+- "List builds in the mobile-apps folder for the ios-app repository" → Uses `list-builds`
 - "Trigger a build for the main branch with environment=staging" → Uses `build-with-parameters`
 - "Get the latest build status for project X" → Uses `fetch-from-jenkins`
 
@@ -160,7 +188,7 @@ Once the MCP server is running and connected to Cursor, you can use natural lang
   - `searchTerm` (string): Keywords to search for
 - **Description**: Searches for jobs matching the given term
 
-#### list-jobs
+#### list-builds
 
 - **Parameters**:
   - `folderName` (string): Jenkins folder name
