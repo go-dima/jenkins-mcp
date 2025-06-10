@@ -1,4 +1,4 @@
-export const TOOL_IDS = {
+export const ToolIDs = {
   SANITY_CHECK: "sanity-check",
   SEARCH_JOBS: "search-jobs",
   LIST_JOBS: "list-jobs",

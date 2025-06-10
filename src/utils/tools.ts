@@ -1,12 +1,9 @@
-import { TOOL_TAILORED_DESCRIPTIONS } from "../assets/tailoredDescriptions.js";
-import { TOOL_DESCRIPTIONS } from "../assets/toolDescriptions.js";
+import tailoredDescriptions from "../assets/tailoredDescriptions.json" with { type: "json" };
 
-export function getToolDescription(
-  toolId: keyof typeof TOOL_DESCRIPTIONS
+export function extendDescription(
+  toolId: keyof typeof tailoredDescriptions,
+  description: string,
 ): string {
-  const { description } = TOOL_DESCRIPTIONS[toolId];
-  const { description: tailoredDescription } =
-    TOOL_TAILORED_DESCRIPTIONS[toolId];
-
+  const { description: tailoredDescription } = tailoredDescriptions[toolId];
   return `${description}\n\n${tailoredDescription}`;
 }

@@ -25,7 +25,7 @@ The Jenkins MCP Server acts as a bridge between Cursor IDE and Jenkins, allowing
 
 ### Tool Description Extension
 
-You can extend the tools by adding tailored descriptions to the `assets/tailoredDescriptions.ts` file. You'll need to re-build the project to see the changes.
+You can extend the tools by adding tailored descriptions to the `assets/tailoredDescriptions.json` file. You'll need to re-build the project to see the changes.
 
 ### Security Features
 
@@ -37,10 +37,16 @@ You can extend the tools by adding tailored descriptions to the `assets/tailored
 
 ```
 jenkins-mcp-server/
-├── index.js                # Main JavaScript implementation
-├── package.json            # Node.js dependencies and scripts
-├── .gitignore              # Git ignore rules
-└── README.md               # This file
+├── src/                    # source code
+│   ├── assets/
+│   │   └── tailoredDescriptions.json  # Custom tool descriptions
+│   ├── consts/
+│   │   └── toolIds.ts      # Tool identifier constants
+│   ├── utils/              # Utility functions
+│   ├── handlers.ts         # MCP request handlers
+│   ├── index.ts            # Main entry point
+│   ├── server.ts           # MCP server setup
+│   └── tools.ts            # Tool definitions
 ```
 
 ## Prerequisites
@@ -66,15 +72,14 @@ jenkins-mcp-server/
 
 3. Tailor usage (optional)
 
-   Add a new tool description to the `assets/tailoredDescriptions.ts` file:
+   Add a new tool description to the `assets/tailoredDescriptions.json` file:
 
    ```ts
-   export const TOOL_TAILORED_DESCRIPTIONS = {
-     [TOOL_IDS.BUILD_WITH_PARAMETERS]: {
-       description:
-         "When you using this tool, ask the user to specify the parameters for the build",
-     },
-   } as const;
+   {
+     "search-jobs": {
+       "description": "Use this rule when no specific job is mentioned"
+     }
+   }
    ```
 
 4. Build the project:

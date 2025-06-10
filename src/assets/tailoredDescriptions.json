@@ -1,0 +1,20 @@
+{
+  "sanity-check": {
+    "description": "Use this when you need to"
+  },
+  "search-jobs": {
+    "description": ""
+  },
+  "list-jobs": {
+    "description": ""
+  },
+  "build-with-parameters": {
+    "description": ""
+  },
+  "fetch-from-jenkins": {
+    "description": ""
+  },
+  "invoke-request": {
+    "description": ""
+  }
+}
