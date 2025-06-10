@@ -1,6 +1,6 @@
 {
   "name": "jenkins-mcp-server",
-  "version": "1.0.0",
+  "version": "1.2.0",
   "description": "MCP server for Cursor that interacts with jenkins",
   "main": "build/index.js",
   "type": "module",
@@ -11,7 +11,8 @@
     "build": "tsc",
     "start": "node build/index.js",
     "dev": "tsc -w",
-    "inspect": "npx @modelcontextprotocol/inspector node build/index.js"
+    "inspect": "npx @modelcontextprotocol/inspector node build/index.js",
+    "clean": "rm -rf build"
   },
   "keywords": [
     "mcp",

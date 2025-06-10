@@ -23,6 +23,10 @@ The Jenkins MCP Server acts as a bridge between Cursor IDE and Jenkins, allowing
 5. **fetch-from-jenkins** - Fetch data from any Jenkins endpoint
 6. **invoke-request** - Execute custom HTTP requests to Jenkins API
 
+### Tool Description Extension
+
+You can extend the tools by adding tailored descriptions to the `assets/tailoredDescriptions.ts` file. You'll need to re-build the project to see the changes.
+
 ### Security Features
 
 - Basic authentication support
@@ -59,6 +63,25 @@ jenkins-mcp-server/
    ```bash
    npm install
    ```
+
+3. Tailor usage (optional)
+
+   Add a new tool description to the `assets/tailoredDescriptions.ts` file:
+
+   ```ts
+   export const TOOL_TAILORED_DESCRIPTIONS = {
+     [TOOL_IDS.BUILD_WITH_PARAMETERS]: {
+       description:
+         "When you using this tool, ask the user to specify the parameters for the build",
+     },
+   } as const;
+   ```
+
+4. Build the project:
+
+```bash
+npm run build
+```
 
 ## Configuration
 

@@ -1,38 +1,26 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import { categorizeError, formatError, JenkinsError } from "./errors.js";
-import { doFetch, doRequest, fetchJsonData } from "./http.js";
+import { TOOL_IDS } from "./consts/toolIds.js";
+import { categorizeError } from "./utils/errors.js";
+import {
+  formatErrorContent,
+  formatJsonContent,
+  formatTextContent,
+} from "./utils/format.js";
+import { doFetch, doRequest, fetchJsonData } from "./utils/http.js";
+import { getToolDescription } from "./utils/tools.js";
 
 // Read jenkins url from env
 const { JENKINS_URL } = process.env;
 
 const server = new McpServer({
   name: "jenkins-mcp-server",
-  version: "1.1.0",
+  version: "1.2.0",
 });
 
-function formatTextContent(text: string): any {
-  return {
-    content: [
-      {
-        type: "text" as const,
-        text,
-      },
-    ],
-  };
-}
-
-function formatErrorContent(jenkinsError: JenkinsError): any {
-  return formatTextContent(formatError(jenkinsError));
-}
-
-function formatJsonContent(json: any): any {
-  return formatTextContent(JSON.stringify(json, null, 2));
-}
-
 server.tool(
-  "sanity-check",
-  "Test connectivity and authentication with your Jenkins server. This verifies that the server is reachable and your credentials are working correctly.",
+  TOOL_IDS.SANITY_CHECK,
+  getToolDescription(TOOL_IDS.SANITY_CHECK),
   {},
   async () => {
     try {
@@ -52,8 +40,8 @@ server.tool(
 );
 
 server.tool(
-  "search-jobs",
-  "Search for Jenkins jobs by keyword or pattern. This helps you discover available jobs when you don't know the exact job name. Returns matching jobs with their paths and types.",
+  TOOL_IDS.SEARCH_JOBS,
+  getToolDescription(TOOL_IDS.SEARCH_JOBS),
   {
     searchTerm: z
       .string()
@@ -117,8 +105,8 @@ server.tool(
 );
 
 server.tool(
-  "list-jobs",
-  "List all jobs within a specific Jenkins folder and repository structure. Use this to browse the hierarchical organization of your Jenkins jobs. Optionally specify a branch to see branch-specific jobs.",
+  TOOL_IDS.LIST_JOBS,
+  getToolDescription(TOOL_IDS.LIST_JOBS),
   {
     folderName: z
       .string()
@@ -217,8 +205,8 @@ server.tool(
 );
 
 server.tool(
-  "build-with-parameters",
-  "Trigger a Jenkins build with custom parameters. This starts a new build job with the specified configuration. Supports environment variables, version numbers, deployment targets, and other custom parameters defined in the job.",
+  TOOL_IDS.BUILD_WITH_PARAMETERS,
+  getToolDescription(TOOL_IDS.BUILD_WITH_PARAMETERS),
   {
     folderName: z
       .string()
@@ -312,8 +300,8 @@ server.tool(
 );
 
 server.tool(
-  "fetch-from-jenkins",
-  "Retrieve raw data from any Jenkins API endpoint. This is a powerful generic tool for accessing Jenkins data that isn't covered by other specific tools. Useful for custom integrations and advanced Jenkins API usage.",
+  TOOL_IDS.FETCH_FROM_JENKINS,
+  getToolDescription(TOOL_IDS.FETCH_FROM_JENKINS),
   {
     jenkinsUrl: z
       .string()
@@ -362,8 +350,8 @@ server.tool(
 );
 
 server.tool(
-  "invoke-request",
-  "Execute any HTTP request to Jenkins with full control over method and parameters. This is the most flexible tool for advanced Jenkins operations like creating jobs, updating configurations, or performing administrative tasks.",
+  TOOL_IDS.INVOKE_REQUEST,
+  getToolDescription(TOOL_IDS.INVOKE_REQUEST),
   {
     jenkinsUrl: z
       .string()
