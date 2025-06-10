@@ -1,9 +1,9 @@
-import tailoredDescriptions from "../assets/tailoredDescriptions.json" with { type: "json" };
+import extraDescriptions from "../assets/extraDescriptions.json" with { type: "json" };
 
-export function extendDescription(
-  toolId: keyof typeof tailoredDescriptions,
-  description: string,
-): string {
-  const { description: tailoredDescription } = tailoredDescriptions[toolId];
-  return `${description}\n\n${tailoredDescription}`;
+export const extendDescription = (
+  toolId: keyof typeof extraDescriptions,
+  baseDescription: string,
+): string => {
+  const { description: extra } = extraDescriptions[toolId];
+  return `${baseDescription}\n\n${extra}`;
 }

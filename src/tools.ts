@@ -4,7 +4,7 @@ import {
   handleBuildWithParameters,
   handleFetchFromJenkins,
   handleInvokeRequest,
-  handleListJobs,
+  handleListBuilds,
   handleSanityCheck,
   handleSearchJobs,
 } from "./handlers.js";
@@ -42,7 +42,7 @@ const ToolsConfig: ToolDescriptions = {
     },
     handler: handleSearchJobs,
   },
-  [ToolIDs.LIST_JOBS]: {
+  [ToolIDs.LIST_BUILDS]: {
     description:
       "List all jobs within a specific Jenkins folder and repository structure. Use this to browse the hierarchical organization of your Jenkins jobs. Optionally specify a branch to see branch-specific jobs.",
     parameters: {
@@ -63,7 +63,7 @@ const ToolsConfig: ToolDescriptions = {
           "Whether to parse the response as JSON (false) or return raw json (true)"
         ),
     },
-    handler: handleListJobs,
+    handler: handleListBuilds,
   },
   [ToolIDs.BUILD_WITH_PARAMETERS]: {
     description:

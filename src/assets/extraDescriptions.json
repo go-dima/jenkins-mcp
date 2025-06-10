@@ -1,11 +1,11 @@
 {
   "sanity-check": {
-    "description": "Use this when you need to"
+    "description": ""
   },
   "search-jobs": {
     "description": ""
   },
-  "list-jobs": {
+  "list-builds": {
     "description": ""
   },
   "build-with-parameters": {

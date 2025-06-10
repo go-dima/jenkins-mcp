@@ -1,6 +1,6 @@
 import { formatError, JenkinsError } from "./errors.js";
 
-export function formatTextContent(text: string): any {
+export const formatTextContent = (text: string): any => {
   return {
     content: [
       {
@@ -9,12 +9,12 @@ export function formatTextContent(text: string): any {
       },
     ],
   };
-}
+};
 
-export function formatErrorContent(jenkinsError: JenkinsError): any {
+export const formatErrorContent = (jenkinsError: JenkinsError): any => {
   return formatTextContent(formatError(jenkinsError));
-}
+};
 
-export function formatJsonContent(json: any): any {
+export const formatJsonContent = (json: any): any => {
   return formatTextContent(JSON.stringify(json, null, 2));
-}
+};

@@ -75,7 +75,7 @@ export const handleSearchJobs = async ({
   }
 };
 
-export const handleListJobs = async ({
+export const handleListBuilds = async ({
   folderName,
   repoName,
   branchName,
@@ -90,18 +90,18 @@ export const handleListJobs = async ({
   let url = `${baseUrl}`;
   try {
     if (branchName) {
-      url = `${url}job/${encodeURIComponent(branchName)}/`;
+      url = `${url}job/${encodeURIComponent(branchName)}`;
     }
 
     const { data } = await fetchJsonData(url);
 
-    if (!data.jobs || data.jobs.length === 0) {
+    if (!data.builds || data.builds.length === 0) {
       const location = branchName
         ? `${folderName}/${repoName}/${branchName}`
         : `${folderName}/${repoName}`;
 
       return formatTextContent(
-        `📂 **No jobs found in ${location}**\n\n` +
+        `📂 **No jobs found in ${location} for ${url}**\n\n` +
           `💡 **This could mean:**\n` +
           `• The folder/repo/branch path doesn't exist\n` +
           `• No jobs are configured in this location\n` +
@@ -117,25 +117,25 @@ export const handleListJobs = async ({
     const location = branchName
       ? `${folderName}/${repoName}/${branchName}`
       : `${folderName}/${repoName}`;
-    let output = `📂 **Jobs in ${location}** (${data.jobs.length} found):\n\n`;
+    let output = `📂 **Builds in ${location}** (${data.builds.length} found):\n\n`;
 
-    data.jobs.forEach((job: any, index: number) => {
-      const statusIcon = job.color
-        ? job.color.includes("blue")
+    data.builds.forEach((build: any, index: number) => {
+      const statusIcon = build.color
+        ? build.color.includes("blue")
           ? "✅"
-          : job.color.includes("red")
+          : build.color.includes("red")
           ? "❌"
-          : job.color.includes("yellow")
+          : build.color.includes("yellow")
           ? "⚠️"
           : "⚪"
         : "📋";
 
-      output += `${index + 1}. ${statusIcon} **${job.name}**\n`;
-      output += `   🔗 ${job.url}\n`;
-      if (job.description) output += `   📝 ${job.description}\n`;
-      if (job.lastBuild) {
-        output += `   🏗️  Last Build: #${job.lastBuild.number} (${new Date(
-          job.lastBuild.timestamp
+      output += `${index + 1}. ${statusIcon} **${build.name}**\n`;
+      output += `   🔗 ${build.url}\n`;
+      if (build.description) output += `   📝 ${build.description}\n`;
+      if (build.lastBuild) {
+        output += `   🏗️  Last Build: #${build.lastBuild.number} (${new Date(
+          build.lastBuild.timestamp
         ).toLocaleString()})\n`;
       }
       output += "\n";
