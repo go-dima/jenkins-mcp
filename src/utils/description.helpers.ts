@@ -5,5 +5,10 @@ export const extendDescription = (
   baseDescription: string,
 ): string => {
   const { description: extra } = extraDescriptions[toolId];
-  return `${baseDescription}\n\n${extra}`;
-}
+  const joinedExtra = joinDescription(extra);
+  return [baseDescription, joinedExtra].join("\n\n");
+};
+
+export const joinDescription = (description: string | string[]): string => {
+  return Array.isArray(description) ? description.join("\n\n") : description;
+};
