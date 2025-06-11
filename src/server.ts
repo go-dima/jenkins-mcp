@@ -1,10 +1,12 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import packageJson from "../package.json" with { type: "json" };
 import { ToolIDs } from "./consts/toolIds.js";
 import getToolConfig from "./tools/tools.helper.js";
 
+
 const server = new McpServer({
-  name: "jenkins-mcp-server",
-  version: "1.2.0",
+  name: packageJson.name,
+  version: packageJson.version
 });
 
 for (const toolId of Object.values(ToolIDs)) {
