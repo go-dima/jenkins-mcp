@@ -1,7 +1,6 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { ToolIDs } from "./consts/toolIds.js";
-import ToolsConfig from "./tools.js";
-import { extendDescription } from "./utils/tools.js";
+import getToolConfig from "./tools/tools.helper.js";
 
 const server = new McpServer({
   name: "jenkins-mcp-server",
@@ -9,9 +8,8 @@ const server = new McpServer({
 });
 
 for (const toolId of Object.values(ToolIDs)) {
-  const { description, parameters, handler } = ToolsConfig[toolId];
-  const extendedDescription = extendDescription(toolId, description);
-  server.tool(toolId, extendedDescription, parameters, handler);
+  const { toolDescription, parameters, handler } = getToolConfig(toolId);
+  server.tool(toolId, toolDescription, parameters, handler);
 }
 
 export default server;

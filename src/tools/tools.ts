@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { ToolIDs } from "./consts/toolIds.js";
+import { ToolIDs } from "../consts/toolIds.js";
 import {
   handleBuildWithParameters,
   handleFetchFromJenkins,
@@ -7,17 +7,8 @@ import {
   handleListBuilds,
   handleSanityCheck,
   handleSearchJobs,
-} from "./handlers.js";
-
-type ToolDescription = {
-  description: string;
-  parameters: Record<string, any>;
-  handler: (args: any) => Promise<any>;
-};
-
-type ToolDescriptions = {
-  [key in (typeof ToolIDs)[keyof typeof ToolIDs]]: ToolDescription;
-};
+} from "../handlers.js";
+import { ToolDescriptions } from "./tools.types.js";
 
 const ToolsConfig: ToolDescriptions = {
   [ToolIDs.SANITY_CHECK]: {
