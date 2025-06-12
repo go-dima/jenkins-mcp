@@ -49,9 +49,35 @@ jenkins-mcp-server/
 │   └── tools.ts            # Tool definitions
 ```
 
+## Docker
+
+The project includes a multi-stage Dockerfile for containerized deployment. The Docker build process uses:
+
+- **Builder stage**: Compiles TypeScript and installs all dependencies
+- **App stage**: Creates a lightweight production image with only runtime dependencies
+
+### Building the Docker Image
+
+```bash
+# Build the Docker image
+docker build -t jenkins-mcp-server .
+```
+
+### Running with Docker
+
+```bash
+# Run with environment variables
+docker run -d \
+  --name jenkins-mcp \
+  -e JENKINS_URL="https://your-jenkins-server.com" \
+  -e JENKINS_USERNAME="your-username" \
+  -e JENKINS_PASSWORD="your-password-or-api-token" \
+  jenkins-mcp-server
+```
+
 ## Prerequisites
 
-- Node.js (version 14 or higher)
+- Node.js (version 20 or higher)
 - Access to a Jenkins server
 - Jenkins username and password/API token
 
@@ -121,6 +147,33 @@ To use this MCP server with Cursor IDE, you need to configure it in your Cursor 
        "jenkins": {
          "command": "node",
          "args": ["/path/to/jenkins-mcp-server/index.js"],
+         "env": {
+           "JENKINS_URL": "https://your-jenkins-server.com",
+           "JENKINS_USERNAME": "your-username",
+           "JENKINS_PASSWORD": "your-password-or-api-token"
+         }
+       }
+     }
+   }
+   ```
+
+   or use the docker image
+
+   ```json
+   {
+     "mcpServers": {
+       "jenkins": {
+         "command": "docker",
+         "args": [
+           "run",
+           "-e",
+           "JENKINS_URL",
+           "-e",
+           "JENKINS_USERNAME",
+           "-e",
+           "JENKINS_PASSWORD",
+           "jenkins-mcp-server:latest"
+         ],
          "env": {
            "JENKINS_URL": "https://your-jenkins-server.com",
            "JENKINS_USERNAME": "your-username",
