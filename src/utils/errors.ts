@@ -110,7 +110,8 @@ export const formatError = (jenkinsError: JenkinsError): string => {
     output += `${index + 1}. ${suggestion}\n`;
   });
 
-  if (jenkinsError.originalError && process.env.NODE_ENV === "development") {
+  // Always show technical details to help debug
+  if (jenkinsError.originalError) {
     output += `\n🔍 **Technical details:** ${
       jenkinsError.originalError.message || jenkinsError.originalError
     }`;

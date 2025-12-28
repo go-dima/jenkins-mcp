@@ -310,3 +310,262 @@ export const handleInvokeRequest = async ({
     return formatErrorContent(jenkinsError);
   }
 };
+
+export const handleGetJobInfo = async ({
+  fullname,
+  rawJson,
+}: {
+  fullname: string;
+  rawJson?: boolean;
+}) => {
+  try {
+    // Construct the API URL exactly like the working curl command
+    // Split the fullname by '/' and encode each part properly
+    const jobParts = fullname
+      .split("/")
+      .map((part) => encodeURIComponent(part))
+      .filter(Boolean); // Remove empty parts
+
+    // Build the complete API URL with /api/json and depth parameter
+    const apiUrl = `${JENKINS_URL}/job/${jobParts.join(
+      "/job/"
+    )}/api/json?depth=1`;
+
+    // Use doFetch directly since we're constructing the complete API URL
+    const { data } = await doFetch(apiUrl);
+
+    // Check if we got valid job data
+    if (!data || !data.name) {
+      return formatTextContent(
+        `📂 **Job not found: ${fullname}**\n\n` +
+          `💡 **This could mean:**\n` +
+          `• The job path doesn't exist\n` +
+          `• You may not have permission to view this job\n` +
+          `• The job name format is incorrect\n\n` +
+          `🔍 **Try using search-jobs to find available jobs**\n` +
+          `🌐 **Attempted URL:** ${apiUrl}`
+      );
+    }
+
+    if (rawJson) {
+      return formatJsonContent(data);
+    }
+
+    // Format the job information in a readable way
+    let output = `📋 **Job Information: ${fullname}**\n\n`;
+
+    // Basic job info
+    output += `🏷️  **Name:** ${data.name}\n`;
+    output += `🔗 **URL:** ${data.url}\n`;
+    output += `📂 **Full Name:** ${data.fullName || fullname}\n`;
+
+    if (data.description) {
+      output += `📝 **Description:** ${data.description}\n`;
+    }
+
+    // Job status and health
+    if (data.color) {
+      const statusIcon = data.color.includes("blue")
+        ? "✅"
+        : data.color.includes("red")
+        ? "❌"
+        : data.color.includes("yellow")
+        ? "⚠️"
+        : data.color.includes("grey")
+        ? "⚫"
+        : "⚪";
+      output += `🎯 **Status:** ${statusIcon} ${data.color}\n`;
+    }
+
+    if (data.buildable !== undefined) {
+      output += `🔨 **Buildable:** ${data.buildable ? "Yes" : "No"}\n`;
+    }
+
+    // Build information
+    if (data.lastBuild) {
+      output += `\n🏗️  **Last Build:**\n`;
+      output += `   • Number: #${data.lastBuild.number}\n`;
+      output += `   • URL: ${data.lastBuild.url}\n`;
+    }
+
+    if (data.lastSuccessfulBuild) {
+      output += `\n✅ **Last Successful Build:**\n`;
+      output += `   • Number: #${data.lastSuccessfulBuild.number}\n`;
+      output += `   • URL: ${data.lastSuccessfulBuild.url}\n`;
+    }
+
+    if (data.lastFailedBuild) {
+      output += `\n❌ **Last Failed Build:**\n`;
+      output += `   • Number: #${data.lastFailedBuild.number}\n`;
+      output += `   • URL: ${data.lastFailedBuild.url}\n`;
+    }
+
+    // Recent builds
+    if (data.builds && data.builds.length > 0) {
+      output += `\n📊 **Recent Builds** (${data.builds.length} shown):\n`;
+      data.builds.slice(0, 5).forEach((build: any, index: number) => {
+        output += `   ${index + 1}. #${build.number} - ${build.url}\n`;
+      });
+      if (data.builds.length > 5) {
+        output += `   ... and ${data.builds.length - 5} more builds\n`;
+      }
+    }
+
+    // Job configuration details
+    if (data.property && data.property.length > 0) {
+      output += `\n⚙️  **Properties:** ${data.property.length} configured\n`;
+    }
+
+    // Downstream and upstream projects
+    if (data.downstreamProjects && data.downstreamProjects.length > 0) {
+      output += `\n⬇️  **Downstream Projects:**\n`;
+      data.downstreamProjects.forEach((project: any) => {
+        output += `   • ${project.name} (${project.url})\n`;
+      });
+    }
+
+    if (data.upstreamProjects && data.upstreamProjects.length > 0) {
+      output += `\n⬆️  **Upstream Projects:**\n`;
+      data.upstreamProjects.forEach((project: any) => {
+        output += `   • ${project.name} (${project.url})\n`;
+      });
+    }
+
+    // Health reports
+    if (data.healthReport && data.healthReport.length > 0) {
+      output += `\n🏥 **Health Reports:**\n`;
+      data.healthReport.forEach((report: any) => {
+        const healthIcon =
+          report.score >= 80
+            ? "💚"
+            : report.score >= 60
+            ? "💛"
+            : report.score >= 40
+            ? "🧡"
+            : "❤️";
+        output += `   ${healthIcon} ${report.description} (Score: ${report.score}%)\n`;
+      });
+    }
+
+    // Actions (like parameterized builds)
+    if (data.actions && data.actions.length > 0) {
+      const parameterActions = data.actions.filter(
+        (action: any) =>
+          action._class &&
+          action._class.includes("ParametersDefinitionProperty")
+      );
+
+      if (parameterActions.length > 0) {
+        output += `\n🔧 **Build Parameters:**\n`;
+        parameterActions.forEach((action: any) => {
+          if (action.parameterDefinitions) {
+            action.parameterDefinitions.forEach((param: any) => {
+              output += `   • ${param.name}: ${param.type || "String"}`;
+              if (param.defaultParameterValue) {
+                output += ` (default: ${param.defaultParameterValue.value})`;
+              }
+              output += `\n`;
+              if (param.description) {
+                output += `     ${param.description}\n`;
+              }
+            });
+          }
+        });
+      }
+    }
+
+    return formatTextContent(output);
+  } catch (error) {
+    const jenkinsError = categorizeError(error);
+
+    // Enhanced error suggestions based on common Jenkins API issues
+    const jobParts = fullname.split("/").filter(Boolean);
+    const constructedUrl = `${JENKINS_URL}/job/${jobParts
+      .map((part) => encodeURIComponent(part))
+      .join("/job/")}/api/json?depth=1`;
+
+    jenkinsError.suggestions.unshift(
+      `Verify the job path '${fullname}' exists in Jenkins`,
+      `Check if you have permission to view this job`,
+      `Ensure the job name format is correct (use / to separate folder levels)`,
+      `Constructed URL: ${constructedUrl}`,
+      `Try using the search-jobs tool first to find the correct job path`
+    );
+
+    // Add specific suggestions for encoded URLs with spaces
+    if (fullname.includes(" ")) {
+      jenkinsError.suggestions.push(
+        `Job name contains spaces - URL encoding is applied automatically`,
+        `Try searching for the job first to get the exact path`
+      );
+    }
+
+    return formatErrorContent(jenkinsError);
+  }
+};
+
+export const handleGetJobLogs = async ({
+  fullname,
+  buildNumber,
+  ntail,
+}: {
+  fullname: string;
+  buildNumber: string;
+  ntail?: number;
+}) => {
+  try {
+    // Split the fullname by '/' and encode each part properly
+    const jobParts = fullname
+      .split("/")
+      .map((part) => encodeURIComponent(part))
+      .filter(Boolean); // Remove empty parts
+
+    // Build the console log URL path (without JENKINS_URL first)
+    const logPath = `/job/${jobParts.join("/job/")}/${buildNumber}/consoleText`;
+
+    // Use the same approach as handleFetchFromJenkins
+    let url = logPath;
+    if (!url.startsWith(JENKINS_URL!)) {
+      url = `${JENKINS_URL}${url}`;
+    }
+
+    const { data } = await doFetch(url);
+
+    // Apply ntail to the actual log data (lines, not characters)
+    let logData = data;
+    if (ntail && typeof data === "string") {
+      const lines = data.split("\n");
+      logData = lines.slice(-ntail).join("\n");
+    }
+
+    let output = `📜 **Console Log for ${fullname} #${buildNumber}**`;
+    if (ntail) {
+      output += ` (last ${ntail} lines)`;
+    }
+    output += `\n\n`;
+    output += "```\n" + logData + "\n```";
+
+    return formatTextContent(output);
+  } catch (error) {
+    const jenkinsError = categorizeError(error);
+
+    // Enhanced error suggestions based on common Jenkins API issues
+    const jobParts = fullname.split("/").filter(Boolean);
+    const logPath = `/job/${jobParts
+      .map((part) => encodeURIComponent(part))
+      .join("/job/")}/${buildNumber}/consoleText`;
+    const constructedUrl = `${JENKINS_URL}${logPath}`;
+
+    jenkinsError.suggestions.unshift(
+      `Verify the job '${fullname}' and build number '${buildNumber}' exist in Jenkins`,
+      `Verify the folder name, repository name, and branch name are correct`,
+      `Check if the job exists in Jenkins`,
+      `Ensure proper case sensitivity in job names`,
+      `Use the search-jobs tool to find available jobs`,
+      `Attempted path: ${logPath}`,
+      `Constructed URL: ${constructedUrl}`
+    );
+
+    return formatErrorContent(jenkinsError);
+  }
+};

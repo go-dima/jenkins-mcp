@@ -37,5 +37,11 @@ export const fetchJsonData = async (url: string): Promise<AxiosResponse> => {
   if (url.endsWith("/api/json")) {
     return doFetch(url);
   }
-  return doFetch(`${url}/api/json`);
+
+  // Check if URL already has query parameters
+  const hasParams = url.includes("?");
+  const baseUrl = hasParams ? url.split("?")[0] : url;
+  const queryParams = hasParams ? "?" + url.split("?")[1] : "";
+
+  return doFetch(`${baseUrl}/api/json${queryParams}`);
 };

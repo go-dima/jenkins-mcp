@@ -5,4 +5,6 @@ export const ToolIDs = {
   BUILD_WITH_PARAMETERS: "build-with-parameters",
   FETCH_FROM_JENKINS: "fetch-from-jenkins",
   INVOKE_REQUEST: "invoke-request",
+  GET_JOB_INFO: "get-job-info",
+  GET_JOB_LOGS: "get-job-logs",
 } as const;

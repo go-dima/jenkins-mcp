@@ -3,6 +3,8 @@ import { ToolIDs } from "../consts/toolIds.js";
 import {
   handleBuildWithParameters,
   handleFetchFromJenkins,
+  handleGetJobInfo,
+  handleGetJobLogs,
   handleInvokeRequest,
   handleListBuilds,
   handleSanityCheck,
@@ -81,6 +83,50 @@ const ToolsConfig: ToolDescriptions = {
         ),
     },
     handler: handleBuildWithParameters,
+  },
+  [ToolIDs.GET_JOB_INFO]: {
+    description:
+      "Get detailed information about a specific Jenkins job.\
+      This provides comprehensive job details including status, recent builds, health reports, parameters, and configuration information.",
+    parameters: {
+      fullname: z
+        .string()
+        .describe(
+          "The full name/path of the Jenkins job (use / to separate folder levels)"
+        ),
+      rawJson: z
+        .boolean()
+        .optional()
+        .describe(
+          "Whether to parse the response as JSON (false) or return raw json (true)"
+        ),
+    },
+    handler: handleGetJobInfo,
+  },
+  [ToolIDs.GET_JOB_LOGS]: {
+    description:
+      "Get the console log for a specific Jenkins job build. This is useful for debugging and viewing the output of a completed or in-progress build.\
+      To get logs for a build, provide the full job path in the 'fullname' parameter, including any folders or branches.\
+      For example: 'MyProject/WebApp/develop'. Job names with spaces are handled automatically.\
+      It's recommended to use 'search-jobs' to find the exact job path and then 'get-job-info' to confirm build numbers before fetching logs\
+      The logs might be very long, so it's recommended to use the ntail parameter to get the last X lines, and if data appears to be truncated, use the ntail parameter to get more lines.",
+    parameters: {
+      fullname: z
+        .string()
+        .describe(
+          "The full name/path of the Jenkins job (use / to separate folder levels)"
+        ),
+      buildNumber: z
+        .string()
+        .describe(
+          "The build number to get the logs for. You can use 'lastBuild' to get the latest build."
+        ),
+      ntail: z
+        .number()
+        .optional()
+        .describe("The number of lines to get from the end of the logs"),
+    },
+    handler: handleGetJobLogs,
   },
   [ToolIDs.FETCH_FROM_JENKINS]: {
     description:

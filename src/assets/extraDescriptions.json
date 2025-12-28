@@ -11,6 +11,12 @@
   "build-with-parameters": {
     "description": ""
   },
+  "get-job-info": {
+    "description": ""
+  },
+  "get-job-logs": {
+    "description": ""
+  },
   "fetch-from-jenkins": {
     "description": ""
   },
